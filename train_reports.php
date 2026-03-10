@@ -121,31 +121,49 @@ if ($reportType === 'transcript' && $staffEmail) {
     }
 }
 
-// ------ 4. DEPARTMENT SUMMARY ------
+// ------ 4. DEPARTMENT SUMMARY — Training + Sub-course Matrix ------
 if ($reportType === 'dept_summary') {
-    $reportTitle = 'Department Performance Summary';
+    $reportTitle = 'Department Training Matrix';
 
-    $where  = "WHERE 1=1";
-    $params = [];
-    if ($trainingId)  { $where .= " AND r.training_id  = ?"; $params[] = $trainingId; }
-    if ($workstation) { $where .= " AND s.workstation  = ?"; $params[] = $workstation; }
+    // Get trainings (filtered or all)
+    if ($trainingId) {
+        $matrixTrainings = $pdo->prepare("SELECT id, name FROM trainings WHERE id = ?");
+        $matrixTrainings->execute([$trainingId]);
+        $matrixTrainings = $matrixTrainings->fetchAll();
+    } else {
+        $matrixTrainings = $pdo->query("SELECT id, name FROM trainings ORDER BY name")->fetchAll();
+    }
 
-    $stmt = $pdo->prepare("
-        SELECT s.department,
-               COUNT(DISTINCT s.id) as staff_count,
-               COUNT(r.id) as total_results,
-               SUM(CASE WHEN r.score >= sc.pass_mark THEN 1 ELSE 0 END) as passed,
-               ROUND(AVG(r.score), 1) as avg_score,
-               ROUND(SUM(CASE WHEN r.score >= sc.pass_mark THEN 1.0 ELSE 0 END) / NULLIF(COUNT(r.id),0) * 100, 1) as pass_rate
-        FROM staff s
-        LEFT JOIN results r    ON r.staff_id = s.id
-        LEFT JOIN sub_courses sc ON sc.id = r.sub_course_id
-        $where
-        GROUP BY s.department
-        ORDER BY pass_rate DESC
+    // Get sub-courses per training: [training_id => [{id, name}, ...]]
+    $tIds = array_column($matrixTrainings, 'id');
+    $matrixSubCourses = [];
+    if ($tIds) {
+        $in = implode(',', array_fill(0, count($tIds), '?'));
+        $scStmt = $pdo->prepare("SELECT id, training_id, name FROM sub_courses WHERE training_id IN ($in) ORDER BY training_id, name");
+        $scStmt->execute($tIds);
+        foreach ($scStmt->fetchAll() as $sc) {
+            $matrixSubCourses[$sc['training_id']][] = $sc;
+        }
+    }
+
+    // Get staff filtered by dept/workstation
+    $swhere = "WHERE 1=1"; $sparams = [];
+    if ($department)  { $swhere .= " AND s.department  = ?"; $sparams[] = $department; }
+    if ($workstation) { $swhere .= " AND s.workstation = ?"; $sparams[] = $workstation; }
+    $staffStmt = $pdo->prepare("
+        SELECT s.id, s.full_name, s.email, s.department, s.workstation
+        FROM staff s $swhere ORDER BY s.department, s.full_name
     ");
-    $stmt->execute($params);
-    $reportData = $stmt->fetchAll();
+    $staffStmt->execute($sparams);
+    $matrixStaff = $staffStmt->fetchAll();
+
+    // Completion map: staff_id => sub_course_id => true
+    $doneMap = [];
+    foreach ($pdo->query("SELECT DISTINCT staff_id, sub_course_id FROM results")->fetchAll() as $row) {
+        $doneMap[$row['staff_id']][$row['sub_course_id']] = true;
+    }
+
+    $reportData = $matrixStaff;
 }
 
 // ------ 5. NON-PARTICIPANTS ------
@@ -275,6 +293,16 @@ require 'header.php';
                target="_blank" class="btn-accent" style="font-size:13px;padding:6px 14px;">
                 <i class="bi bi-file-earmark-person"></i> Download Transcript
             </a>
+            <?php elseif (in_array($reportType, ['completion','training_detail','dept_summary','non_participants'])): ?>
+            <a href="report_download.php?<?= http_build_query(array_filter([
+                    'report'      => $reportType,
+                    'training_id' => $trainingId ?: '',
+                    'dept'        => $department,
+                    'workstation' => $workstation,
+                ])) ?>"
+               target="_blank" class="btn-accent" style="font-size:13px;padding:6px 14px;">
+                <i class="bi bi-file-earmark-bar-graph"></i> Download Report
+            </a>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -386,36 +414,98 @@ require 'header.php';
         </table>
         </div>
 
-    <?php elseif ($reportType === 'dept_summary'): ?>
-        <div class="table-responsive">
-        <table class="table datatable">
-            <thead><tr>
-                <th>Department</th><th>Staff Count</th><th>Total Results</th>
-                <th>Passed</th><th>Avg Score</th><th>Pass Rate</th>
-            </tr></thead>
-            <tbody>
-            <?php foreach ($reportData as $r): ?>
-                <tr>
-                    <td><span class="dept-pill"><?= htmlspecialchars($r['department'] ?: 'Unassigned') ?></span></td>
-                    <td><?= $r['staff_count'] ?></td>
-                    <td><?= $r['total_results'] ?></td>
-                    <td><span class="badge-pass"><?= (int)$r['passed'] ?></span></td>
-                    <td><?= $r['avg_score'] ?? '—' ?>%</td>
-                    <td>
-                        <?php $pr = $r['pass_rate'] ?? 0; ?>
-                        <div style="display:flex;align-items:center;gap:8px">
-                            <div class="score-bar-wrap" style="min-width:70px">
-                                <div class="score-bar <?= $pr < 50 ? 'low' : ($pr < 70 ? 'mid' : '') ?>"
-                                     style="width:<?= $pr ?>%"></div>
-                            </div>
-                            <span style="font-size:12px"><?= $pr ?>%</span>
-                        </div>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+    <?php elseif ($reportType === 'dept_summary'):
+        $staffByDept = [];
+        foreach ($matrixStaff as $s) {
+            $staffByDept[$s['department'] ?: 'Unassigned'][] = $s;
+        }
+    ?>
+        <!-- Legend -->
+        <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;align-items:center;flex-wrap:wrap;">
+            <span style="color:var(--muted)">Legend:</span>
+            <span style="color:#4a9e1e;font-weight:700;font-size:15px">✓</span><span style="color:var(--muted)"> Sub-course done</span>
+            <span style="color:#c0392b;font-weight:700;font-size:15px">✗</span><span style="color:var(--muted)"> Not yet done</span>
         </div>
+
+        <?php foreach ($staffByDept as $deptName => $deptStaff): ?>
+        <div style="margin-bottom:28px">
+            <div style="font-family:'Barlow',sans-serif;font-weight:700;color:var(--navy);font-size:13px;
+                        padding:8px 14px;background:var(--surface2);border:1px solid var(--border);
+                        border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center;">
+                <span><?= htmlspecialchars($deptName) ?></span>
+                <span style="font-size:11px;font-weight:500;color:var(--muted)"><?= count($deptStaff) ?> staff</span>
+            </div>
+            <div class="table-responsive" style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow:auto">
+            <table class="table" style="margin:0;font-size:11.5px;min-width:100%">
+                <thead>
+                    <!-- Row 1: Training group headers -->
+                    <tr>
+                        <th rowspan="2" style="min-width:150px;vertical-align:middle">Full Name</th>
+                        <th rowspan="2" style="min-width:170px;vertical-align:middle">Email</th>
+                        <?php foreach ($matrixTrainings as $tr):
+                            $scCount = count($matrixSubCourses[$tr['id']] ?? []);
+                            if ($scCount === 0) continue;
+                        ?>
+                        <th colspan="<?= $scCount ?>"
+                            style="text-align:center;background:rgba(0,47,102,0.06);
+                                   border-left:2px solid var(--border);font-size:10px;
+                                   color:var(--navy);font-weight:700;padding:5px 8px;white-space:nowrap">
+                            <?= htmlspecialchars($tr['name']) ?>
+                            <span style="font-weight:400;color:var(--muted);margin-left:4px">(<?= $scCount ?> sub-courses)</span>
+                        </th>
+                        <?php endforeach; ?>
+                    </tr>
+                    <!-- Row 2: Sub-course headers -->
+                    <tr>
+                        <?php foreach ($matrixTrainings as $tr):
+                            foreach (($matrixSubCourses[$tr['id']] ?? []) as $sc):
+                        ?>
+                        <th style="text-align:center;font-size:9.5px;min-width:80px;max-width:100px;
+                                   border-left:1px solid var(--border);line-height:1.3;
+                                   white-space:normal;font-weight:600;color:var(--muted);
+                                   background:var(--surface2);padding:4px 6px">
+                            <?= htmlspecialchars($sc['name']) ?>
+                        </th>
+                        <?php endforeach; endforeach; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($deptStaff as $s):
+                    // Count completed sub-courses for this staff across shown trainings
+                    $scTotal = 0; $scDone = 0;
+                    foreach ($matrixTrainings as $tr) {
+                        foreach (($matrixSubCourses[$tr['id']] ?? []) as $sc) {
+                            $scTotal++;
+                            if (!empty($doneMap[$s['id']][$sc['id']])) $scDone++;
+                        }
+                    }
+                ?>
+                    <tr>
+                        <td>
+                            <strong><?= htmlspecialchars($s['full_name']) ?></strong>
+                            <div style="font-size:10px;color:var(--muted);margin-top:2px">
+                                <?= $scDone ?>/<?= $scTotal ?> sub-courses
+                            </div>
+                        </td>
+                        <td style="font-size:11px;color:var(--accent)"><?= htmlspecialchars($s['email']) ?></td>
+                        <?php foreach ($matrixTrainings as $tr):
+                            foreach (($matrixSubCourses[$tr['id']] ?? []) as $sc):
+                        ?>
+                        <td style="text-align:center;border-left:1px solid var(--border)">
+                            <?php if (!empty($doneMap[$s['id']][$sc['id']])): ?>
+                                <span style="color:#4a9e1e;font-size:16px;font-weight:700" title="Done">✓</span>
+                            <?php else: ?>
+                                <span style="color:#c0392b;font-size:16px;font-weight:700" title="Not done">✗</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php endforeach; endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        <?php endforeach; ?>
 
     <?php elseif ($reportType === 'non_participants'): ?>
         <div class="table-responsive">

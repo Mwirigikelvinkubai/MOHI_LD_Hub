@@ -147,13 +147,76 @@ if ($type === 'report') {
     }
 
     elseif ($reportType === 'dept_summary') {
-        writeRow(['Department', 'Staff Count', 'Total Results', 'Passed', 'Avg Score (%)', 'Pass Rate (%)']);
-        $where = "WHERE 1=1"; $params = [];
-        if ($trainingId) { $where .= " AND r.training_id=?"; $params[] = $trainingId; }
-        $stmt = $pdo->prepare("SELECT s.department, COUNT(DISTINCT s.id) as staff_count, COUNT(r.id) as total, SUM(CASE WHEN r.score>=sc.pass_mark THEN 1 ELSE 0 END) as passed, ROUND(AVG(r.score),1) as avg_score, ROUND(SUM(CASE WHEN r.score>=sc.pass_mark THEN 1.0 ELSE 0 END)/NULLIF(COUNT(r.id),0)*100,1) as pass_rate FROM staff s LEFT JOIN results r ON r.staff_id=s.id LEFT JOIN sub_courses sc ON sc.id=r.sub_course_id $where GROUP BY s.department ORDER BY pass_rate DESC");
-        $stmt->execute($params);
-        foreach ($stmt->fetchAll() as $r) {
-            writeRow([$r['department']??'Unassigned', $r['staff_count'], $r['total'], (int)$r['passed'], $r['avg_score']??'', $r['pass_rate']??'']);
+        // ── Matrix export: rows = staff, columns = training > sub-course ──
+
+        // Training columns
+        if ($trainingId) {
+            $mTrainings = $pdo->prepare("SELECT id, name FROM trainings WHERE id=?");
+            $mTrainings->execute([$trainingId]);
+            $mTrainings = $mTrainings->fetchAll();
+        } else {
+            $mTrainings = $pdo->query("SELECT id, name FROM trainings ORDER BY name")->fetchAll();
+        }
+
+        // Sub-courses per training
+        $tIds = array_column($mTrainings, 'id');
+        $mSubCourses = [];
+        if ($tIds) {
+            $in = implode(',', array_fill(0, count($tIds), '?'));
+            $scStmt = $pdo->prepare("SELECT id, training_id, name FROM sub_courses WHERE training_id IN ($in) ORDER BY training_id, name");
+            $scStmt->execute($tIds);
+            foreach ($scStmt->fetchAll() as $sc) {
+                $mSubCourses[$sc['training_id']][] = $sc;
+            }
+        }
+
+        // Staff filtered
+        $swhere = "WHERE 1=1"; $sparams = [];
+        if ($department)  { $swhere .= " AND department=?";  $sparams[] = $department; }
+        if ($workstation) { $swhere .= " AND workstation=?"; $sparams[] = $workstation; }
+        $staffRows = $pdo->prepare("SELECT id, full_name, email, department, workstation FROM staff $swhere ORDER BY department, full_name");
+        $staffRows->execute($sparams);
+        $staffRows = $staffRows->fetchAll();
+
+        // Completion map: staff_id => sub_course_id => true
+        $doneMap = [];
+        foreach ($pdo->query("SELECT DISTINCT staff_id, sub_course_id FROM results")->fetchAll() as $row) {
+            $doneMap[$row['staff_id']][$row['sub_course_id']] = true;
+        }
+
+        // ── Header row 1: Training names spanning sub-courses ──
+        $hdr1 = ['Full Name', 'Email', 'Department', 'Work Station', 'Total Done'];
+        foreach ($mTrainings as $tr) {
+            $scCount = count($mSubCourses[$tr['id']] ?? []);
+            if ($scCount === 0) continue;
+            $hdr1[] = $tr['name'];
+            for ($i = 1; $i < $scCount; $i++) $hdr1[] = ''; // blank cells for colspan effect
+        }
+        writeRow($hdr1);
+
+        // ── Header row 2: Sub-course names ──
+        $hdr2 = ['', '', '', '', ''];
+        foreach ($mTrainings as $tr) {
+            foreach (($mSubCourses[$tr['id']] ?? []) as $sc) {
+                $hdr2[] = $sc['name'];
+            }
+        }
+        writeRow($hdr2);
+
+        // ── Data rows ──
+        foreach ($staffRows as $s) {
+            $scTotal = 0; $scDone = 0;
+            $cells = [];
+            foreach ($mTrainings as $tr) {
+                foreach (($mSubCourses[$tr['id']] ?? []) as $sc) {
+                    $scTotal++;
+                    $done = !empty($doneMap[$s['id']][$sc['id']]);
+                    if ($done) $scDone++;
+                    $cells[] = $done ? 'Done' : 'Not Done';
+                }
+            }
+            $row = [$s['full_name'], $s['email'], $s['department'], $s['workstation'], "$scDone/$scTotal"];
+            writeRow(array_merge($row, $cells));
         }
     }
 
