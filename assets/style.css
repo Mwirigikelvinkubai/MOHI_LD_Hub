@@ -932,3 +932,178 @@ code {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: rgba(38,169,224,0.2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(38,169,224,0.4); }
+
+/* =========================================
+   TOPBAR — logout button + right group
+========================================= */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.topbar-logout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.topbar-logout:hover {
+    color: #f87171;
+    border-color: rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.06);
+}
+
+/* =========================================
+   HAMBURGER TOGGLE (hidden on desktop)
+========================================= */
+.sb-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 28px;
+    height: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.sb-toggle span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--muted);
+    border-radius: 2px;
+    transition: all 0.25s;
+    transform-origin: center;
+}
+
+.sb-toggle.open span:nth-child(1) { transform: translateY(9px) rotate(45deg);  background: var(--blue); }
+.sb-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.sb-toggle.open span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); background: var(--blue); }
+
+/* =========================================
+   SIDEBAR OVERLAY (mobile)
+========================================= */
+#sb-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+
+#sb-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* =========================================
+   MOBILE RESPONSIVE  (≤ 768px)
+========================================= */
+@media (max-width: 768px) {
+
+    /* Show hamburger */
+    .sb-toggle { display: flex; }
+
+    /* Hide logout label text, keep icon */
+    .logout-label { display: none; }
+
+    /* Sidebar slides off-screen by default */
+    .sidebar {
+        transform: translateX(calc(-1 * var(--sidebar-w)));
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 200;
+    }
+
+    /* Slide in when .open is added by JS */
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 40px rgba(0,0,0,0.5);
+    }
+
+    /* Main content fills full width */
+    .main {
+        margin-left: 0;
+    }
+
+    /* Topbar stays full width */
+    .topbar {
+        padding: 10px 14px;
+    }
+
+    .topbar-date {
+        font-size: 10.5px;
+    }
+
+    /* Content padding tighter on small screens */
+    .content {
+        padding: 16px 14px;
+    }
+
+    /* Hub grid: single column */
+    .hub-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    /* Section heading responsive */
+    .section-title { font-size: 18px; }
+    .section-sub   { font-size: 12px; margin-bottom: 14px; }
+
+    /* Stat cards: 2-column grid */
+    .row.g-3 .col-sm-6.col-lg-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Modals: full-width on small screens */
+    .modal-dialog {
+        margin: 10px;
+        max-width: calc(100vw - 20px);
+    }
+
+    /* Tables: horizontal scroll already handled by .table-responsive */
+
+    /* RACI table: smaller text */
+    .raci-table { font-size: 11px; }
+}
+
+/* =========================================
+   EXTRA SMALL  (≤ 480px)
+========================================= */
+@media (max-width: 480px) {
+
+    .topbar-date { display: none; }
+
+    /* Stat cards: full width stacked */
+    .row.g-3 .col-sm-6.col-lg-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .content { padding: 12px 10px; }
+
+    /* Hub card inner padding */
+    .hub-card { padding: 18px; }
+
+    /* Topbar title font */
+    .topbar-title { font-size: 14px; }
+}

@@ -3,7 +3,8 @@
  * header.php — MOHI LD HUB shared navigation
  * Requires: $pageTitle, $activePage to be set before include
  */
-if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/auth.php';
+requireAuth();
 
 // Load custom modules for sidebar
 $_db = getDB();
@@ -14,6 +15,7 @@ $_customModules = $_db->query("SELECT * FROM hub_modules WHERE is_active=1 ORDER
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= csrfToken() ?>">
     <title><?= htmlspecialchars($pageTitle ?? 'MOHI LD HUB') ?> — MOHI LD HUB</title>
 
     <!-- Bootstrap 5 CSS -->
@@ -33,10 +35,13 @@ $_customModules = $_db->query("SELECT * FROM hub_modules WHERE is_active=1 ORDER
 </head>
 <body>
 
+<!-- Sidebar overlay (mobile) -->
+<div id="sb-overlay"></div>
+
 <!-- ============================================================
      SIDEBAR NAVIGATION
      ============================================================ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
 
     <!-- Brand -->
     <div class="sidebar-brand">
@@ -138,14 +143,28 @@ $_customModules = $_db->query("SELECT * FROM hub_modules WHERE is_active=1 ORDER
 
     <!-- Topbar -->
     <div class="topbar">
+        <!-- Hamburger (mobile only) -->
+        <button class="sb-toggle" id="sb-toggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+
         <div class="topbar-left">
             <div>
                 <div class="topbar-breadcrumb">Learning &amp; Development · Tech &amp; Data</div>
                 <div class="topbar-title"><?= htmlspecialchars($pageTitle ?? 'MOHI LD HUB') ?></div>
             </div>
         </div>
-        <div class="topbar-date">
-            <i class="bi bi-calendar3 me-1"></i><?= date('l, d M Y') ?>
+        <div class="topbar-right">
+            <div class="topbar-date">
+                <i class="bi bi-calendar3 me-1"></i><?= date('l, d M Y') ?>
+            </div>
+            <a href="login.php?logout=1"
+               class="topbar-logout"
+               onclick="return confirm('Sign out of MOHI LD HUB?')"
+               title="Sign out">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="logout-label">Sign Out</span>
+            </a>
         </div>
     </div>
 

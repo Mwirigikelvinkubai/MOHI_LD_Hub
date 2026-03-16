@@ -1,4 +1,4 @@
-    </div><!-- /.content -->
+</div><!-- /.content -->
 </div><!-- /.main -->
 
 <!-- jQuery -->
@@ -16,7 +16,7 @@
 
 <script>
 $(document).ready(function () {
-    // Auto-init DataTables
+    // ── DataTables ──
     $('.datatable').DataTable({
         pageLength: 25,
         language: {
@@ -26,10 +26,53 @@ $(document).ready(function () {
         dom: '<"d-flex justify-content-between align-items-center mb-3"fl>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
     });
 
-    // Chart.js global defaults — MOHI brand
+    // ── Chart.js global defaults — MOHI brand ──
     Chart.defaults.color = '#7aaac8';
     Chart.defaults.borderColor = 'rgba(38,169,224,0.12)';
     Chart.defaults.font.family = "'Barlow', sans-serif";
+
+    // ── Mobile sidebar toggle ──
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('sb-overlay');
+    const toggle   = document.getElementById('sb-toggle');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        toggle.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        toggle.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    if (toggle)  toggle.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar on nav link click (mobile)
+    document.querySelectorAll('.sidebar-nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) closeSidebar();
+        });
+    });
+
+    // ── CSRF: auto-inject token into every POST form ──
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) {
+        const csrfToken = csrfMeta.getAttribute('content');
+        document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+            if (!form.querySelector('input[name="csrf_token"]')) {
+                const input = document.createElement('input');
+                input.type  = 'hidden';
+                input.name  = 'csrf_token';
+                input.value = csrfToken;
+                form.appendChild(input);
+            }
+        });
+    }
 });
 </script>
 

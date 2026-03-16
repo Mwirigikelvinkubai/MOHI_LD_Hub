@@ -215,3 +215,37 @@ function redirect(string $url): void {
 function navActive(string $page, string $activePage): string {
     return $page === $activePage ? ' active' : '';
 }
+
+// =====================================================
+// AUTHENTICATION
+// Change these credentials before deployment.
+// =====================================================
+define('APP_ADMIN_USER', 'admin');
+define('APP_ADMIN_PASS', 'admin123'); // ← CHANGE THIS
+
+// =====================================================
+// CSRF PROTECTION
+// =====================================================
+
+/**
+ * Return (and generate if needed) the session CSRF token.
+ */
+function csrfToken(): string {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Verify the CSRF token from a POST request.
+ * Terminates with 403 on failure — call once at the top of every POST handler.
+ */
+function verifyCsrf(): void {
+    $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    if (!hash_equals(csrfToken(), $token)) {
+        http_response_code(403);
+        die('Security check failed (invalid CSRF token). Please go back and try again.');
+    }
+}

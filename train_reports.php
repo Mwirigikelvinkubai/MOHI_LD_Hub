@@ -471,7 +471,7 @@ require 'header.php';
                 </thead>
                 <tbody>
                 <?php foreach ($deptStaff as $s):
-                    // Count completed sub-courses for this staff across shown trainings
+                    // Count completed sub-courses for this staff across shown trainings it will delete everthing with count
                     $scTotal = 0; $scDone = 0;
                     foreach ($matrixTrainings as $tr) {
                         foreach (($matrixSubCourses[$tr['id']] ?? []) as $sc) {
