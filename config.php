@@ -10,6 +10,9 @@ define('APP_NAME', 'MOHI LD HUB');
 define('APP_VERSION', '2.0');
 
 function getDB(): PDO {
+    static $pdo = null;
+    if ($pdo !== null) return $pdo;
+
     if (!is_dir(__DIR__ . '/data')) {
         mkdir(__DIR__ . '/data', 0755, true);
     }
@@ -221,8 +224,7 @@ function navActive(string $page, string $activePage): string {
 // Change these credentials before deployment.
 // =====================================================
 define('APP_ADMIN_USER', 'admin');
-define('APP_ADMIN_PASS', 'admin123'); // ← CHANGE THIS
-
+define('APP_ADMIN_PASS', 'qwerty'); 
 // =====================================================
 // CSRF PROTECTION
 // =====================================================

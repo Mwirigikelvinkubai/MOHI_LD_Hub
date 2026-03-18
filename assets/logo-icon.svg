@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <!-- Book left page — MOHI Primary Blue -->
+  <path d="M4 13 C4 11 6 9 8 9 L19 9 L19 33 L8 33 C6 33 4 31 4 29 Z" fill="#26A9E0"/>
+  <!-- Spine -->
+  <rect x="19" y="9" width="2" height="24" fill="#1a8ab8"/>
+  <!-- Book right page — lighter -->
+  <path d="M21 9 L32 9 C34 9 36 11 36 13 L36 29 C36 31 34 33 32 33 L21 33 Z" fill="#26A9E0" opacity="0.6"/>
+  <!-- Page lines left -->
+  <line x1="8"  y1="16" x2="17" y2="16" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+  <line x1="8"  y1="20" x2="17" y2="20" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+  <line x1="8"  y1="24" x2="14" y2="24" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+  <!-- Page lines right -->
+  <line x1="23" y1="16" x2="33" y2="16" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
+  <line x1="23" y1="20" x2="33" y2="20" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
+  <line x1="23" y1="24" x2="30" y2="24" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.45"/>
+  <!-- Growth arrow — MOHI Green -->
+  <path d="M20 8 L20 3" stroke="#8BC53F" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M17 6 L20 3 L23 6" fill="none" stroke="#8BC53F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

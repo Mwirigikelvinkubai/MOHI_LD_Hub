@@ -1,6 +1,6 @@
 <?php
 /**
- * index.php — Dashboard
+ * train_dashboard.php — Dashboard
  * Shows KPI stats and Chart.js visualizations of training data
  */
 
@@ -11,7 +11,7 @@ $activePage = 'train_dashboard';
 
 $pdo = getDB();
 
-// ---- KPI Queries ----q
+// ---- KPI Queries ----
 
 // Total staff count
 $totalStaff = $pdo->query("SELECT COUNT(*) FROM staff")->fetchColumn();

@@ -6,6 +6,8 @@
  */
 
 require_once 'config.php';
+require_once 'auth.php';
+requireAuth();
 
 $pdo  = getDB();
 $type = $_GET['type'] ?? 'staff';

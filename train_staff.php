@@ -18,6 +18,7 @@ $pdo = getDB();
 
 // ---- Handle DELETE ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    verifyCsrf();
 
     if ($_POST['action'] === 'delete' && isset($_POST['id'])) {
         $stmt = $pdo->prepare("DELETE FROM staff WHERE id = ?");
@@ -78,6 +79,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
             setFlash('danger', 'File upload error.');
+            redirect('train_staff.php');
+        }
+
+        // Server-side file type validation (client accept=".csv" is easily bypassed)
+        $ext      = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $mimeType = mime_content_type($file['tmp_name']);
+        $allowedExts   = ['csv'];
+        $allowedMimes  = ['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'];
+
+        if (!in_array($ext, $allowedExts) || !in_array($mimeType, $allowedMimes)) {
+            setFlash('danger', 'Invalid file type. Please upload a .csv file only.');
+            redirect('train_staff.php');
+        }
+
+        // Enforce a reasonable file size limit (5 MB)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            setFlash('danger', 'File too large. Maximum size is 5 MB.');
             redirect('train_staff.php');
         }
 

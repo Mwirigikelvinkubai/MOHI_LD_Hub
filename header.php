@@ -45,11 +45,8 @@ $_customModules = $_db->query("SELECT * FROM hub_modules WHERE is_active=1 ORDER
 
     <!-- Brand -->
     <div class="sidebar-brand">
-        <div class="logo-row">
-            <div class="logo-icon"><i class="bi bi-grid-3x3-gap-fill" style="color:#fff"></i></div>
-            <h1>MOHI LD HUB</h1>
-        </div>
-        <div class="org-sub">Learning &amp; Development</div>
+        <img src="assets/logo.svg" alt="MOHI Learning &amp; Development"
+             style="width:100%; max-width:200px; height:auto; display:block; margin-bottom:0;">
     </div>
 
     <!-- Navigation -->

@@ -7,6 +7,8 @@
  */
 
 require_once 'config.php';
+require_once 'auth.php';
+requireAuth();
 
 $pdo = getDB();
 
@@ -546,7 +548,7 @@ $generatedAt = date('d M Y, H:i');
             </div>
             <div class="stat-box">
                 <div class="stat-num green"><?= $totDone ?></div>
-                <div class="stat-lbl">Interactions</div>
+                <div class="stat-lbl">Completed</div>
             </div>
             <div class="stat-box">
                 <div class="stat-num <?= $completionRate>=70?'green':($completionRate>=50?'gold':'') ?>"><?= $completionRate ?>%</div>
