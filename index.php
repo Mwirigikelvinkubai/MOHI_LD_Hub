@@ -127,6 +127,26 @@ require 'header.php';
         </div>
     </a>
 
+    <!-- ── MANAGE USERS (admin only) ── -->
+    <?php if (isAdmin()): ?>
+    <a href="manage_users.php" class="hub-card">
+        <div class="hub-card-icon navy"><i class="bi bi-shield-lock-fill"></i></div>
+        <div class="hub-card-title">Manage Users</div>
+        <div class="hub-card-desc">Add hub accounts, assign roles (Admin / Editor / Viewer), reset passwords and manage access.</div>
+        <div class="hub-card-items">
+            <?php
+            $__uCount = getDB()->query("SELECT COUNT(*) FROM users WHERE is_active=1")->fetchColumn();
+            $__uTotal = getDB()->query("SELECT COUNT(*) FROM users")->fetchColumn();
+            ?>
+            <div class="hub-card-item">
+                <i class="bi bi-person-check"></i>
+                <span><?= number_format($__uCount) ?> active account<?= $__uCount != 1 ? 's' : '' ?> of <?= $__uTotal ?> total</span>
+            </div>
+        </div>
+        <i class="bi bi-arrow-right hub-card-arrow"></i>
+    </a>
+    <?php endif; ?>
+
 </div>
 
 <?php require 'footer.php'; ?>

@@ -1,13 +1,8 @@
 <?php
 /**
  * login.php — MOHI LD HUB Authentication
- * Handles login and logout for all hub users.
- *
- * ┌─────────────────────────────────────────────────┐
- * │  To change the admin password:                  │
- * │  Edit APP_ADMIN_USER and APP_ADMIN_PASS          │
- * │  in config.php                                  │
- * └─────────────────────────────────────────────────┘
+ * Credentials are stored in the users table (DB-backed).
+ * Default: admin / Admin@2025!  — change via Manage Users after first login.
  */
 
 require_once 'config.php';
@@ -25,24 +20,25 @@ if (isAuthed()) {
     redirect('index.php');
 }
 
-$error   = '';
-$next    = clean($_GET['next'] ?? 'index.php');
+$error = '';
+$next  = clean($_GET['next'] ?? 'index.php');
 
 // ── Handle login POST ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($username === APP_ADMIN_USER && $password === APP_ADMIN_PASS) {
-        $_SESSION['ld_hub_authed'] = true;
-        $_SESSION['ld_hub_user']   = $username;
-        // Regenerate session ID on login to prevent session fixation
-        session_regenerate_id(true);
-        redirect(filter_var($next, FILTER_VALIDATE_URL) ? 'index.php' : $next);
+    $user = loginUser($username, $password);
+
+    if ($user) {
+        setUserSession($user);
+        // Reject unsafe external redirects
+        $safePath = (str_starts_with($next, '/') || !str_contains($next, '://'))
+            ? $next : 'index.php';
+        redirect($safePath);
     } else {
-        // Deliberate small delay to slow brute-force attempts
-        sleep(1);
-        $error = 'Incorrect username or password.';
+        sleep(1); // slow brute-force
+        $error = 'Incorrect username or password, or account is inactive.';
     }
 }
 
@@ -62,7 +58,7 @@ $loggedOut = isset($_GET['logged_out']);
     <style>
         :root {
             --navy:    #002F66;
-            --blue:    #26A9E0;
+            --orange:  #26A9E0;
             --green:   #8BC53F;
             --bg:      #00283C;
             --bg2:     #002F66;
@@ -116,7 +112,7 @@ $loggedOut = isset($_GET['logged_out']);
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--blue), var(--green));
+            background: linear-gradient(90deg, var(--accent), var(--green));
         }
 
         .brand-row {
@@ -147,7 +143,7 @@ $loggedOut = isset($_GET['logged_out']);
 
         .brand-text p {
             font-size: 11px;
-            color: var(--blue);
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.1em;
             margin: 2px 0 0;
@@ -189,7 +185,7 @@ $loggedOut = isset($_GET['logged_out']);
         }
 
         .form-control:focus {
-            border-color: var(--blue) !important;
+            border-color: var(--accent) !important;
             box-shadow: 0 0 0 3px rgba(38,169,224,0.15) !important;
             outline: none;
         }
@@ -208,7 +204,7 @@ $loggedOut = isset($_GET['logged_out']);
 
         .btn-login {
             width: 100%;
-            background: linear-gradient(135deg, var(--blue), #0089BA);
+            background: linear-gradient(135deg, var(--accent), #0089BA);
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -288,11 +284,8 @@ $loggedOut = isset($_GET['logged_out']);
 
     <!-- Brand -->
     <div class="brand-row">
-        <div class="brand-icon"><i class="bi bi-grid-3x3-gap-fill" style="color:#fff"></i></div>
-        <div class="brand-text">
-            <h1>MOHI LD HUB</h1>
-            <p>Learning &amp; Development</p>
-        </div>
+        <img src="assets/logo.svg" alt="MOHI Learning &amp; Development"
+             style="width:190px; height:auto; display:block;">
     </div>
 
     <h2>Sign In</h2>

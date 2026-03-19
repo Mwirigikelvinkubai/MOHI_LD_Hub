@@ -169,11 +169,11 @@ $generatedAt = date('d M Y, H:i');
             font-size: 12.5px;
             background: #f0f4f8;
             color: #1a2a3a;
-            padding: 28px 16px;
+            padding: 28px 12px;
         }
 
         .page {
-            max-width: 960px;
+            max-width: 1180px;
             margin: 0 auto;
             background: #fff;
             border-radius: 10px;
@@ -360,7 +360,7 @@ $generatedAt = date('d M Y, H:i');
 
         /* Print bar */
         .print-bar {
-            max-width: 960px; margin: 0 auto 16px;
+            max-width: 1180px; margin: 0 auto 16px;
             display: flex; gap: 10px; align-items: center; justify-content: flex-end;
         }
         .btn-print {
@@ -435,7 +435,9 @@ $generatedAt = date('d M Y, H:i');
             .page { box-shadow:none; border-radius:0; max-width:100%; }
             .print-bar { display:none !important; }
             .section-hdr, .standalone-tbl, .data-tbl { break-inside: avoid; }
-            @page { margin:12mm 10mm; size:A4 landscape; }
+            @page { margin:8mm 6mm; size:A4 landscape; }
+            .page { box-shadow:none; border-radius:0; max-width:100%; }
+            .doc-body { padding:16px 20px; }
         }
     </style>
 </head>
@@ -545,10 +547,6 @@ $generatedAt = date('d M Y, H:i');
             <div class="stat-box">
                 <div class="stat-num"><?= $totalSubCourses ?></div>
                 <div class="stat-lbl">Sub-Courses</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-num green"><?= $totDone ?></div>
-                <div class="stat-lbl">Completed</div>
             </div>
             <div class="stat-box">
                 <div class="stat-num <?= $completionRate>=70?'green':($completionRate>=50?'gold':'') ?>"><?= $completionRate ?>%</div>
@@ -739,8 +737,7 @@ $generatedAt = date('d M Y, H:i');
                 <thead>
                     <!-- Row 1: Training group headers -->
                     <tr>
-                        <th rowspan="2" style="min-width:160px;vertical-align:middle;white-space:nowrap">Full Name</th>
-                        <th rowspan="2" style="min-width:190px;vertical-align:middle;white-space:nowrap">Email</th>
+                        <th rowspan="2" style="min-width:140px;vertical-align:middle;white-space:nowrap">Full Name</th>
                         <?php foreach ($matrixTrainings as $tr):
                             $scCount = count($matrixSubCourses[$tr['id']] ?? []);
                             if ($scCount === 0) continue;
@@ -759,11 +756,14 @@ $generatedAt = date('d M Y, H:i');
                         <?php foreach ($matrixTrainings as $tr):
                             foreach (($matrixSubCourses[$tr['id']] ?? []) as $sc):
                         ?>
-                        <th style="text-align:center;font-size:8px;min-width:75px;max-width:95px;
-                                   border-left:1px solid #dde6f0;line-height:1.3;
-                                   white-space:normal;font-weight:600;color:#7a94b0;
-                                   background:#f8fafc;padding:4px 5px">
-                            <?= htmlspecialchars($sc['name']) ?>
+                        <th style="text-align:center;width:52px;max-width:65px;
+                                   border-left:1px solid #dde6f0;font-weight:600;
+                                   color:#7a94b0;background:#f8fafc;
+                                   padding:0;height:100px;vertical-align:bottom;">
+                            <div style="writing-mode:vertical-rl;transform:rotate(180deg);
+                                        padding:6px 4px;font-size:8px;line-height:1.2;
+                                        word-break:break-word;max-height:96px;
+                                        overflow:hidden;display:block;"><?= htmlspecialchars($sc['name']) ?></div>
                         </th>
                         <?php endforeach; endforeach; ?>
                     </tr>
@@ -781,13 +781,12 @@ $generatedAt = date('d M Y, H:i');
                     <tr>
                         <td class="name-cell">
                             <strong><?= htmlspecialchars($s['full_name']) ?></strong>
-                            <div style="font-size:9.5px;color:#7a94b0;margin-top:2px"><?= $scDone ?>/<?= $scTotal ?> done</div>
+                            <div style="font-size:8.5px;color:#7a94b0;margin-top:1px"><?= $scDone ?>/<?= $scTotal ?></div>
                         </td>
-                        <td class="email-cell"><?= htmlspecialchars($s['email']) ?></td>
                         <?php foreach ($matrixTrainings as $tr):
                             foreach (($matrixSubCourses[$tr['id']] ?? []) as $sc):
                         ?>
-                        <td style="text-align:center;padding:6px 4px;border-left:1px solid #f0f4f8;">
+                        <td style="text-align:center;padding:5px 2px;border-left:1px solid #f0f4f8;width:52px;">
                             <?php if (!empty($doneMap[$s['id']][$sc['id']])): ?>
                                 <span style="color:#4a8a0e;font-size:15px;font-weight:700">✓</span>
                             <?php else: ?>

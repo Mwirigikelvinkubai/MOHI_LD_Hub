@@ -183,6 +183,32 @@ function initSchema(): void {
             created_at  TEXT    DEFAULT (datetime('now'))
         )
     ");
+
+    // =====================================================
+    // USERS — hub login accounts with roles
+    // Roles: admin | editor | viewer
+    // =====================================================
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            username    TEXT    NOT NULL UNIQUE,
+            password    TEXT    NOT NULL,
+            full_name   TEXT,
+            email       TEXT,
+            role        TEXT    DEFAULT 'viewer',
+            is_active   INTEGER DEFAULT 1,
+            last_login  TEXT,
+            created_at  TEXT    DEFAULT (datetime('now'))
+        )
+    ");
+
+    // Seed a default admin if no users exist yet
+    $count = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+    if ((int)$count === 0) {
+        $hash = password_hash('Admin@2025!', PASSWORD_BCRYPT);
+        $pdo->prepare("INSERT INTO users (username, password, full_name, role) VALUES (?, ?, ?, ?)")
+            ->execute(['admin', $hash, 'Administrator', 'admin']);
+    }
 }
 
 initSchema();
@@ -220,11 +246,25 @@ function navActive(string $page, string $activePage): string {
 }
 
 // =====================================================
-// AUTHENTICATION
-// Change these credentials before deployment.
+// ROLE HELPERS
 // =====================================================
-define('APP_ADMIN_USER', 'admin');
-define('APP_ADMIN_PASS', 'qwerty'); 
+
+/** Return the current user's role from session, or '' if not logged in. */
+function currentRole(): string {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    return $_SESSION['ld_hub_role'] ?? '';
+}
+
+/** Return true only if the current user is an admin. */
+function isAdmin(): bool {
+    return currentRole() === 'admin';
+}
+
+/** Return true if the user can write data (admin or editor). */
+function canEdit(): bool {
+    return in_array(currentRole(), ['admin', 'editor'], true);
+}
+
 // =====================================================
 // CSRF PROTECTION
 // =====================================================

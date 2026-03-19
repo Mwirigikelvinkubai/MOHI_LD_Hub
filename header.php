@@ -123,12 +123,30 @@ $_customModules = $_db->query("SELECT * FROM hub_modules WHERE is_active=1 ORDER
 
         <div class="sidebar-divider"></div>
 
-        <!-- ── MANAGE MODULES ── -->
+        <!-- ── ADMIN SECTION ── -->
+        <div class="nav-section-label">Administration</div>
+
         <a href="modules.php" class="<?= $activePage === 'modules' ? 'active' : '' ?>">
             <i class="bi bi-grid-1x2"></i> Manage Modules
         </a>
 
+        <?php if (isAdmin()): ?>
+        <a href="manage_users.php" class="<?= $activePage === 'manage_users' ? 'active' : '' ?>">
+            <i class="bi bi-people-fill"></i> Manage Users
+        </a>
+        <?php endif; ?>
+
     </nav>
+
+    <!-- Logged-in user chip -->
+    <?php $__cu = currentUser(); ?>
+    <div class="sidebar-user">
+        <div class="sidebar-user-avatar"><?= strtoupper(substr($__cu['full_name'] ?: $__cu['username'], 0, 1)) ?></div>
+        <div class="sidebar-user-info">
+            <div class="sidebar-user-name"><?= htmlspecialchars($__cu['full_name'] ?: $__cu['username']) ?></div>
+            <div class="sidebar-user-role"><?= ucfirst($__cu['role']) ?></div>
+        </div>
+    </div>
 
     <div class="sidebar-footer">MOHI L&amp;D · <?= date('Y') ?></div>
 </aside>
@@ -154,6 +172,11 @@ $_customModules = $_db->query("SELECT * FROM hub_modules WHERE is_active=1 ORDER
         <div class="topbar-right">
             <div class="topbar-date">
                 <i class="bi bi-calendar3 me-1"></i><?= date('l, d M Y') ?>
+            </div>
+            <?php $__topUser = currentUser(); ?>
+            <div class="topbar-user-chip">
+                <div class="topbar-user-avatar"><?= strtoupper(substr($__topUser['full_name'] ?: $__topUser['username'], 0, 1)) ?></div>
+                <span class="topbar-user-name"><?= htmlspecialchars($__topUser['full_name'] ?: $__topUser['username']) ?></span>
             </div>
             <a href="login.php?logout=1"
                class="topbar-logout"
