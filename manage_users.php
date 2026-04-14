@@ -75,10 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             setFlash('danger', 'You cannot remove admin role from your own account.');
             redirect('manage_users.php');
         }
-        $target = $pdo->prepare("SELECT role FROM users WHERE id=?")->execute([$id]) && false;
-        $targetRow = $pdo->prepare("SELECT role, is_active FROM users WHERE id=?")->execute([$id])
-            ? $pdo->prepare("SELECT role, is_active FROM users WHERE id=?") : null;
-        // Simpler approach:
         $tr = $pdo->prepare("SELECT role FROM users WHERE id=?");
         $tr->execute([$id]);
         $targetRole = $tr->fetchColumn();
@@ -120,8 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } else {
             $pdo->prepare("UPDATE users SET password=? WHERE id=?")
                 ->execute([password_hash($pw, PASSWORD_BCRYPT), $id]);
-            $uname = $pdo->prepare("SELECT username FROM users WHERE id=?")->execute([$id])
-                ? '' : '';
             $row = $pdo->prepare("SELECT username FROM users WHERE id=?");
             $row->execute([$id]);
             $uname = $row->fetchColumn();

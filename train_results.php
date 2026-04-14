@@ -13,6 +13,8 @@
  */
 
 require_once 'config.php';
+require_once 'auth.php';
+requireAuth();
 
 $pageTitle  = 'Results';
 $activePage = 'train_results';

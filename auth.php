@@ -38,10 +38,10 @@ function requireAuth(): void {
             $_SESSION['ld_hub_name'] = $row['full_name'] ?: $_SESSION['ld_hub_user'];
             $_SESSION['ld_hub_role'] = $row['role'];
         } else {
-            // Username not in DB at all — treat as admin (migration safety)
-            $_SESSION['ld_hub_uid']  = 0;
-            $_SESSION['ld_hub_name'] = $_SESSION['ld_hub_user'];
-            $_SESSION['ld_hub_role'] = 'admin';
+            // Username not in DB — session is stale (account deleted). Force re-login.
+            session_destroy();
+            header('Location: login.php');
+            exit;
         }
     }
 }
